@@ -78,6 +78,7 @@ import BetaBadge from "./BetaBadge";
 import SidebarAccountMenu from "./SidebarAccountMenu/SidebarAccountMenu";
 import SidebarUsageCard from "./SidebarUsageCard";
 import { routeSegmentForPathname, uiHref } from "@/utils/uiHref";
+import { useLocale } from "@/contexts/LocaleContext";
 
 const ICON = { strokeWidth: 1.75 } as const;
 
@@ -429,6 +430,18 @@ export const getBreadcrumb = (pathname: string): { section: string | null; title
   return { section: null, title: prettify(route) };
 };
 
+export const getBreadcrumbKey = (pathname: string): string => {
+  const route = routeForPathname(pathname);
+  for (const group of menuGroups) {
+    for (const item of group.items) {
+      if (routeOf(item) === route) return item.key;
+      const child = item.children?.find((candidate) => routeOf(candidate) === route);
+      if (child) return child.key;
+    }
+  }
+  return route;
+};
+
 const Sidebar_: React.FC<SidebarProps> = ({
   collapsed = false,
   onToggleCollapsed,
@@ -446,6 +459,7 @@ const Sidebar_: React.FC<SidebarProps> = ({
   const [erroredDarkLogo, setErroredDarkLogo] = useState<string | null>(null);
   const { data: healthData } = useHealthReadinessDetails(accessToken);
   const logout = useLogout(accessToken);
+  const { nav } = useLocale();
 
   const baseUrl = getProxyBaseUrl();
   const version = healthData?.litellm_version;
@@ -532,10 +546,20 @@ const Sidebar_: React.FC<SidebarProps> = ({
     });
   };
 
+  const renderMenuLabel = (item: MenuItem) => (
+    <>
+      {nav(item.key, labelText(item))}
+      {(item.key === "cost-optimization" || item.key === "projects") && <BetaBadge />}
+    </>
+  );
+
   const renderLeaf = (item: MenuItem, isChild: boolean) => {
     const active = selectedKey === item.key;
     const size = isChild ? "sub" : "default";
-    const label = <span className="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden">{item.label}</span>;
+    const translatedLabel = nav(item.key, labelText(item));
+    const label = (
+      <span className="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden">{renderMenuLabel(item)}</span>
+    );
 
     if (item.external_url) {
       return (
@@ -544,7 +568,7 @@ const Sidebar_: React.FC<SidebarProps> = ({
           href={item.external_url}
           target="_blank"
           rel="noopener noreferrer"
-          title={collapsed ? labelText(item) : undefined}
+          title={collapsed ? translatedLabel : undefined}
           data-active={active || undefined}
           className={cn(sidebarMenuButtonVariants({ isActive: active, size }))}
         >
@@ -559,7 +583,7 @@ const Sidebar_: React.FC<SidebarProps> = ({
       <Link
         key={item.key}
         href={uiHref(routeOf(item))}
-        title={collapsed ? labelText(item) : undefined}
+        title={collapsed ? translatedLabel : undefined}
         data-active={active || undefined}
         className={cn(sidebarMenuButtonVariants({ isActive: active, size }))}
       >
@@ -583,10 +607,10 @@ const Sidebar_: React.FC<SidebarProps> = ({
           isActive={active}
           aria-expanded={open}
           onClick={() => toggleGroup(item.key)}
-          title={collapsed ? labelText(item) : undefined}
+          title={collapsed ? nav(item.key, labelText(item)) : undefined}
         >
           {item.icon}
-          <span className="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden">{item.label}</span>
+          <span className="flex-1 truncate group-data-[collapsed=true]/sidebar:hidden">{renderMenuLabel(item)}</span>
           <ChevronRight
             className={cn(
               "size-4 shrink-0 transition-transform group-data-[collapsed=true]/sidebar:hidden",
@@ -653,7 +677,7 @@ const Sidebar_: React.FC<SidebarProps> = ({
           {visibleGroups.map((group, gi) => (
             <SidebarGroup key={group.groupLabel}>
               {gi > 0 && <SidebarSeparator className="hidden group-data-[collapsed=true]/sidebar:block" />}
-              <SidebarGroupLabel>{group.groupLabel}</SidebarGroupLabel>
+              <SidebarGroupLabel>{nav(group.groupLabel, group.groupLabel)}</SidebarGroupLabel>
               <SidebarMenu>{group.items.map((item) => renderItem(item))}</SidebarMenu>
             </SidebarGroup>
           ))}

@@ -8,6 +8,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ReactQueryProvider from "@/contexts/ReactQueryProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { LocaleProvider } from "@/contexts/LocaleContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,7 +31,9 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <NuqsAdapter>
             <ReactQueryProvider>
-              <AuthProvider>{children}</AuthProvider>
+              <LocaleProvider>
+                <AuthProvider>{children}</AuthProvider>
+              </LocaleProvider>
               <Toaster />
             </ReactQueryProvider>
           </NuqsAdapter>
