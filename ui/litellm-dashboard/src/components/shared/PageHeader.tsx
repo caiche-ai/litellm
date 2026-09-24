@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { ToolbarSeparator } from "./ToolbarSeparator";
+import { useLocale } from "@/contexts/LocaleContext";
 
 interface EmbeddedTabsSlots {
   leadingControls: React.ReactNode;
@@ -19,6 +20,7 @@ interface PageHeaderProps {
 }
 
 export function PageHeader({ title, subtitle, icon, primaryAction, tabs, utilities }: PageHeaderProps) {
+  const { text } = useLocale();
   const leadingControls =
     primaryAction == null ? null : (
       <div className="flex h-9 items-center">
@@ -38,9 +40,11 @@ export function PageHeader({ title, subtitle, icon, primaryAction, tabs, utiliti
         >
           {icon}
         </span>
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {typeof title === "string" ? text(title) : title}
+        </h1>
       </div>
-      <p className="mt-1.5 text-sm text-muted-foreground">{subtitle}</p>
+      <p className="mt-1.5 text-sm text-muted-foreground">{typeof subtitle === "string" ? text(subtitle) : subtitle}</p>
 
       {typeof tabs === "function" ? (
         <div className="mt-5">{tabs({ leadingControls, utilities: utilityControls })}</div>

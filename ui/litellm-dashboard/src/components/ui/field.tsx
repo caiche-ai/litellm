@@ -6,6 +6,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/cva.config";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { useLocale } from "@/contexts/LocaleContext";
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
@@ -23,15 +24,19 @@ function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
 function FieldLegend({
   className,
   variant = "legend",
+  children,
   ...props
 }: React.ComponentProps<"legend"> & { variant?: "legend" | "label" }) {
+  const { text } = useLocale();
   return (
     <legend
       data-slot="field-legend"
       data-variant={variant}
       className={cn("mb-3 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base", className)}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </legend>
   );
 }
 
@@ -89,7 +94,8 @@ function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
-function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
+function FieldLabel({ className, children, ...props }: React.ComponentProps<typeof Label>) {
+  const { text } = useLocale();
   return (
     <Label
       data-slot="field-label"
@@ -99,11 +105,14 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </Label>
   );
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
+function FieldTitle({ className, children, ...props }: React.ComponentProps<"div">) {
+  const { text } = useLocale();
   return (
     <div
       data-slot="field-label"
@@ -112,11 +121,14 @@ function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </div>
   );
 }
 
-function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
+function FieldDescription({ className, children, ...props }: React.ComponentProps<"p">) {
+  const { text } = useLocale();
   return (
     <p
       data-slot="field-description"
@@ -127,7 +139,9 @@ function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </p>
   );
 }
 

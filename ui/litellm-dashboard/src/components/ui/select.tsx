@@ -5,6 +5,7 @@ import { Select as SelectPrimitive } from "@base-ui/react/select";
 
 import { cn } from "@/lib/cva.config";
 import { ChevronDownIcon, CheckIcon, ChevronUpIcon } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 const Select = SelectPrimitive.Root;
 
@@ -12,9 +13,15 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return <SelectPrimitive.Group data-slot="select-group" className={cn("scroll-my-1 p-1", className)} {...props} />;
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, placeholder, ...props }: SelectPrimitive.Value.Props) {
+  const { text } = useLocale();
   return (
-    <SelectPrimitive.Value data-slot="select-value" className={cn("flex flex-1 text-left", className)} {...props} />
+    <SelectPrimitive.Value
+      data-slot="select-value"
+      className={cn("flex flex-1 text-left", className)}
+      placeholder={typeof placeholder === "string" ? text(placeholder) : placeholder}
+      {...props}
+    />
   );
 }
 
@@ -92,6 +99,7 @@ function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) 
 }
 
 function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {
+  const { text } = useLocale();
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
@@ -102,7 +110,7 @@ function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Prop
       {...props}
     >
       <SelectPrimitive.ItemText className="flex flex-1 shrink-0 gap-2 whitespace-nowrap">
-        {children}
+        {typeof children === "string" ? text(children) : children}
       </SelectPrimitive.ItemText>
       <SelectPrimitive.ItemIndicator
         render={<span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center" />}

@@ -4,6 +4,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/cva.config";
+import { useLocale } from "@/contexts/LocaleContext";
 
 function Tabs({ className, orientation = "horizontal", ...props }: TabsPrimitive.Root.Props) {
   return (
@@ -46,7 +47,8 @@ function TabsList({
   );
 }
 
-function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
+function TabsTrigger({ className, children, ...props }: TabsPrimitive.Tab.Props) {
+  const { text } = useLocale();
   return (
     <TabsPrimitive.Tab
       data-slot="tabs-trigger"
@@ -58,7 +60,9 @@ function TabsTrigger({ className, ...props }: TabsPrimitive.Tab.Props) {
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </TabsPrimitive.Tab>
   );
 }
 

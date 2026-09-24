@@ -6,6 +6,7 @@ import { Dialog as SheetPrimitive } from "@base-ui/react/dialog";
 import { cn } from "@/lib/cva.config";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 function Sheet({ ...props }: SheetPrimitive.Root.Props) {
   return <SheetPrimitive.Root data-slot="sheet" {...props} />;
@@ -46,6 +47,7 @@ function SheetContent({
   side?: "top" | "right" | "bottom" | "left";
   showCloseButton?: boolean;
 }) {
+  const { text } = useLocale();
   return (
     <SheetPortal>
       <SheetOverlay />
@@ -65,7 +67,7 @@ function SheetContent({
             render={<Button variant="ghost" className="absolute top-4 right-4" size="icon-sm" />}
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{text("Close")}</span>
           </SheetPrimitive.Close>
         )}
       </SheetPrimitive.Popup>
@@ -81,19 +83,25 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return <div data-slot="sheet-footer" className={cn("mt-auto flex flex-col gap-2 p-4", className)} {...props} />;
 }
 
-function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props) {
+function SheetTitle({ className, children, ...props }: SheetPrimitive.Title.Props) {
+  const { text } = useLocale();
   return (
-    <SheetPrimitive.Title data-slot="sheet-title" className={cn("font-medium text-foreground", className)} {...props} />
+    <SheetPrimitive.Title data-slot="sheet-title" className={cn("font-medium text-foreground", className)} {...props}>
+      {typeof children === "string" ? text(children) : children}
+    </SheetPrimitive.Title>
   );
 }
 
-function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props) {
+function SheetDescription({ className, children, ...props }: SheetPrimitive.Description.Props) {
+  const { text } = useLocale();
   return (
     <SheetPrimitive.Description
       data-slot="sheet-description"
       className={cn("text-sm text-muted-foreground", className)}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </SheetPrimitive.Description>
   );
 }
 

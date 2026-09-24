@@ -1,9 +1,13 @@
+"use client";
+
 import * as React from "react";
 
 import { cn } from "@/lib/cva.config";
+import { useLocale } from "@/contexts/LocaleContext";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+  ({ className, type, placeholder, ...props }, ref) => {
+    const { text } = useLocale();
     return (
       <input
         type={type}
@@ -15,6 +19,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        placeholder={typeof placeholder === "string" ? text(placeholder) : placeholder}
         {...props}
       />
     );

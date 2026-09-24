@@ -10,6 +10,7 @@ import {
 } from "react-hook-form";
 
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export type FormFieldControlProps<
   TFieldValues extends FieldValues,
@@ -39,6 +40,7 @@ export const FormField = <TFieldValues extends FieldValues, TName extends FieldP
   className,
   children,
 }: FormFieldProps<TFieldValues, TName>) => {
+  const { text } = useLocale();
   const reactId = React.useId();
   const controlId = `${reactId}-control`;
   const descriptionId = `${reactId}-description`;
@@ -63,9 +65,15 @@ export const FormField = <TFieldValues extends FieldValues, TName extends FieldP
 
         return (
           <Field orientation={orientation} data-invalid={invalid || undefined} className={className}>
-            {label !== undefined && <FieldLabel htmlFor={controlId}>{label}</FieldLabel>}
+            {label !== undefined && (
+              <FieldLabel htmlFor={controlId}>{typeof label === "string" ? text(label) : label}</FieldLabel>
+            )}
             {children(controlProps)}
-            {description !== undefined && <FieldDescription id={descriptionId}>{description}</FieldDescription>}
+            {description !== undefined && (
+              <FieldDescription id={descriptionId}>
+                {typeof description === "string" ? text(description) : description}
+              </FieldDescription>
+            )}
             <FieldError id={errorId} errors={[fieldState.error]} />
           </Field>
         );

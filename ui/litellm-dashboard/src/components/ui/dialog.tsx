@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { cn } from "@/lib/cva.config";
 import { Button } from "@/components/ui/button";
 import { XIcon } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
@@ -44,6 +45,7 @@ function DialogContent({
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean;
 }) {
+  const { text } = useLocale();
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -62,7 +64,7 @@ function DialogContent({
             render={<Button variant="ghost" className="absolute top-4 right-4" size="icon-sm" />}
           >
             <XIcon />
-            <span className="sr-only">Close</span>
+            <span className="sr-only">{text("Close")}</span>
           </DialogPrimitive.Close>
         )}
       </DialogPrimitive.Popup>
@@ -82,6 +84,7 @@ function DialogFooter({
 }: React.ComponentProps<"div"> & {
   showCloseButton?: boolean;
 }) {
+  const { text } = useLocale();
   return (
     <div
       data-slot="dialog-footer"
@@ -89,18 +92,24 @@ function DialogFooter({
       {...props}
     >
       {children}
-      {showCloseButton && <DialogPrimitive.Close render={<Button variant="outline" />}>Close</DialogPrimitive.Close>}
+      {showCloseButton && (
+        <DialogPrimitive.Close render={<Button variant="outline" />}>{text("Close")}</DialogPrimitive.Close>
+      )}
     </div>
   );
 }
 
-function DialogTitle({ className, ...props }: DialogPrimitive.Title.Props) {
+function DialogTitle({ className, children, ...props }: DialogPrimitive.Title.Props) {
+  const { text } = useLocale();
   return (
-    <DialogPrimitive.Title data-slot="dialog-title" className={cn("leading-none font-medium", className)} {...props} />
+    <DialogPrimitive.Title data-slot="dialog-title" className={cn("leading-none font-medium", className)} {...props}>
+      {typeof children === "string" ? text(children) : children}
+    </DialogPrimitive.Title>
   );
 }
 
-function DialogDescription({ className, ...props }: DialogPrimitive.Description.Props) {
+function DialogDescription({ className, children, ...props }: DialogPrimitive.Description.Props) {
+  const { text } = useLocale();
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
@@ -109,7 +118,9 @@ function DialogDescription({ className, ...props }: DialogPrimitive.Description.
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </DialogPrimitive.Description>
   );
 }
 

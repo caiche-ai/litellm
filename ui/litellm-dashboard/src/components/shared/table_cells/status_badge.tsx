@@ -5,6 +5,7 @@ import * as React from "react";
 import { useEntityLinkClick } from "@/components/shared/EntityLink";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cva.config";
+import { useLocale } from "@/contexts/LocaleContext";
 
 import { CellTooltip } from "./cell_tooltip";
 
@@ -28,21 +29,24 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ tone, label, tooltip, dataTestId, className, href }: StatusBadgeProps) {
+  const { text } = useLocale();
+  const localizedLabel = text(label);
+  const localizedTooltip = typeof tooltip === "string" ? text(tooltip) : tooltip;
   const badgeClassName = cn("whitespace-nowrap font-normal", TONE_CLASS[tone], className);
   const badge = href ? (
     <LinkedStatusBadge href={href} dataTestId={dataTestId} className={badgeClassName}>
-      {label}
+      {localizedLabel}
     </LinkedStatusBadge>
   ) : (
     <Badge variant="outline" data-testid={dataTestId} className={badgeClassName}>
-      {label}
+      {localizedLabel}
     </Badge>
   );
 
-  if (!tooltip) {
+  if (!localizedTooltip) {
     return badge;
   }
-  return <CellTooltip content={tooltip} trigger={badge} />;
+  return <CellTooltip content={localizedTooltip} trigger={badge} />;
 }
 
 interface LinkedStatusBadgeProps {

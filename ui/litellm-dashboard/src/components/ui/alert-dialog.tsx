@@ -4,6 +4,7 @@ import * as React from "react";
 import { AlertDialog as AlertDialogPrimitive } from "@base-ui/react/alert-dialog";
 
 import { cn } from "@/lib/cva.config";
+import { useLocale } from "@/contexts/LocaleContext";
 import { Button } from "@/components/ui/button";
 
 function AlertDialog({ ...props }: AlertDialogPrimitive.Root.Props) {
@@ -93,7 +94,8 @@ function AlertDialogMedia({ className, ...props }: React.ComponentProps<"div">) 
   );
 }
 
-function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+function AlertDialogTitle({ className, children, ...props }: React.ComponentProps<typeof AlertDialogPrimitive.Title>) {
+  const { text } = useLocale();
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
@@ -102,14 +104,18 @@ function AlertDialogTitle({ className, ...props }: React.ComponentProps<typeof A
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </AlertDialogPrimitive.Title>
   );
 }
 
 function AlertDialogDescription({
   className,
+  children,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Description>) {
+  const { text } = useLocale();
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
@@ -118,7 +124,9 @@ function AlertDialogDescription({
         className,
       )}
       {...props}
-    />
+    >
+      {typeof children === "string" ? text(children) : children}
+    </AlertDialogPrimitive.Description>
   );
 }
 

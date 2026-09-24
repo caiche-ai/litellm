@@ -9,6 +9,7 @@ import {
   ComboboxItem,
   ComboboxList,
 } from "@/components/ui/combobox";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export interface SearchSelectOption {
   label: string;
@@ -50,6 +51,7 @@ export function SearchSelect({
   allowClear = true,
   "aria-label": ariaLabel,
 }: SearchSelectProps) {
+  const { text } = useLocale();
   const selected =
     value == null || value === "" ? null : options.find((option) => option.value === value) ?? { label: value, value };
   const items =
@@ -61,25 +63,25 @@ export function SearchSelect({
       value={selected}
       onValueChange={(item: SearchSelectOption | null) => onValueChange(item?.value ?? null)}
       isItemEqualToValue={(a: SearchSelectOption, b: SearchSelectOption) => a.value === b.value}
-      itemToStringLabel={(item: SearchSelectOption) => item.label}
+      itemToStringLabel={(item: SearchSelectOption) => text(item.label)}
       filter={matchesQuery}
       disabled={disabled}
     >
       <ComboboxInput
         id={inputId}
-        aria-label={ariaLabel}
-        placeholder={placeholder}
+        aria-label={ariaLabel === undefined ? undefined : text(ariaLabel)}
+        placeholder={text(placeholder)}
         showClear={allowClear && value != null && value !== ""}
         className={`h-8 w-full text-sm ${className ?? ""}`}
       />
       <ComboboxContent side="bottom" collisionAvoidance={{ side: "shift", align: "shift", fallbackAxisSide: "none" }}>
-        <ComboboxEmpty>{emptyText}</ComboboxEmpty>
+        <ComboboxEmpty>{text(emptyText)}</ComboboxEmpty>
         <ComboboxList>
           {(item: SearchSelectOption) => (
             <ComboboxItem key={item.value} value={item}>
               {item.icon}
               <span className="flex min-w-0 flex-col">
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{text(item.label)}</span>
                 {item.sublabel != null && item.sublabel !== "" && (
                   <span className="truncate text-xs text-muted-foreground">{item.sublabel}</span>
                 )}
