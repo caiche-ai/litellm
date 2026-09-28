@@ -197,6 +197,21 @@ model_list:
       model: openai/gpt-4o-mini
       api_key: os.environ/OPENAI_API_KEY
 
+  - model_name: jev-auto-router
+    litellm_params:
+      model: auto_router/complexity_router
+      complexity_router_default_model: anthropic-sonnet-4-5
+      complexity_router_config:
+        classifier_type: jev
+        jev_classifier_config:
+          model: jev-latest
+          timeout_ms: 3000
+        tiers:
+          SIMPLE: anthropic-haiku-4-5
+          MEDIUM: anthropic-sonnet-4-5
+          COMPLEX: anthropic-sonnet-5
+          REASONING: anthropic-opus-4-8
+
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY
   # Opt-in: let CheckBatchCost track cost for unmanaged batches created with a raw
