@@ -1,0 +1,59 @@
+@baseUrl = http://localhost:4000
+@masterKey = sk-local-development-key-1234567890
+
+### Health check
+GET {{baseUrl}}/health/liveliness
+
+### Available models
+GET {{baseUrl}}/v1/models
+Authorization: Bearer {{masterKey}}
+
+### Chat completion
+POST {{baseUrl}}/v1/chat/completions
+Authorization: Bearer {{masterKey}}
+Content-Type: application/json
+
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Reply with pong"
+    }
+  ],
+  "stream": false
+}
+
+### PII masking
+POST {{baseUrl}}/v1/chat/completions
+Authorization: Bearer {{masterKey}}
+Content-Type: application/json
+
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "My name is Jane Doe, my email is jane.doe@example.com, and my phone number is 212-555-0198. Repeat these details exactly."
+    }
+  ],
+  "guardrails": ["pii-input-mask"],
+  "stream": false
+}
+
+### PII blocking
+POST {{baseUrl}}/v1/chat/completions
+Authorization: Bearer {{masterKey}}
+Content-Type: application/json
+
+{
+  "model": "gpt-4o-mini",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Store this credit card number: 4111 1111 1111 1111."
+    }
+  ],
+  "guardrails": ["pii-input-mask"],
+  "stream": false
+}
