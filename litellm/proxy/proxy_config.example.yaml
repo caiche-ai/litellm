@@ -1,57 +1,107 @@
+# 对外提供的模型列表
 model_list:
+  # 客户端请求中使用的逻辑模型名称
   - model_name: chat-model
+    # 传递给 LiteLLM 模型调用层的参数
     litellm_params:
+      # 实际模型名称，通常包含 Provider 前缀，例如 openai/<model>
       model: os.environ/CHAT_MODEL
+      # 上游模型服务的 API Key
       api_key: os.environ/CHAT_MODEL_API_KEY
+      # 上游模型服务地址，使用官方默认地址时可删除
       api_base: os.environ/CHAT_MODEL_API_BASE
+  # MCP 语义工具筛选使用的 Embedding 模型
   - model_name: embedding-model
     litellm_params:
+      # 实际 Embedding 模型名称
       model: os.environ/EMBEDDING_MODEL
+      # Embedding Provider 的 API Key
       api_key: os.environ/EMBEDDING_MODEL_API_KEY
+      # Embedding Provider 地址，使用官方默认地址时可删除
       api_base: os.environ/EMBEDDING_MODEL_API_BASE
 
+# 可供 LiteLLM 调用的 MCP 服务
 mcp_servers:
+  # MCP 服务在 LiteLLM 内部的名称
   documentation:
+    # MCP 传输协议，可按服务能力改为 stdio、sse 等
     transport: http
+    # MCP HTTP 服务地址
     url: os.environ/MCP_SERVER_URL
 
+# Proxy 服务级配置
 general_settings:
+  # Proxy 主密钥，用于管理和访问受保护接口
   master_key: os.environ/LITELLM_MASTER_KEY
+  # 是否将模型配置保存到数据库，本示例仅使用 YAML
   store_model_in_db: false
+  # 是否关闭消费日志，false 表示保留消费记录
   disable_spend_logs: false
 
+# 模型路由、重试和故障处理配置
 router_settings:
+  # 同一逻辑模型存在多个 Deployment 时的选择策略
   routing_strategy: simple-shuffle
+  # 单个请求失败后的最大重试次数
   num_retries: 2
+  # Router 请求总超时时间，单位为秒
   timeout: 60
+  # Deployment 达到该失败次数后进入冷却状态
   allowed_fails: 3
+  # 失败 Deployment 的冷却时间，单位为秒
   cooldown_time: 60
 
+# LiteLLM SDK 和 Proxy 共用的运行时配置
 litellm_settings:
+  # 自动删除目标 Provider 不支持的可选请求参数
   drop_params: true
+  # 单次上游模型调用超时时间，单位为秒
   request_timeout: 60
+  # 根据用户问题筛选最相关的 MCP 工具
   mcp_semantic_tool_filter:
+    # 是否启用 MCP 语义工具筛选
     enabled: true
+    # 计算工具描述和用户问题相似度的逻辑模型名
     embedding_model: embedding-model
+    # 最多保留的相关工具数量
     top_k: 5
+    # 工具入选所需的最低相似度
     similarity_threshold: 0.3
+  # 请求和响应安全规则列表
   guardrails:
+    # Guardrail 的逻辑名称，可用于请求、模型、Key 或 Team 绑定
     - guardrail_name: pii-input-mask
+      # Presidio Guardrail 的初始化参数
       litellm_params:
+        # 使用 Presidio 执行 PII 识别和处理
         guardrail: presidio
+        # 在调用上游模型之前运行输入检查
         mode: pre_call
+        # 对所有请求默认启用，无需客户端显式指定 guardrails
         default_on: true
+        # Presidio Analyzer 地址，负责识别实体类型、位置和置信度
         presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+        # Presidio Anonymizer 地址，负责替换已识别的敏感文本
         presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+        # 仅处理输入；可改为 output 或 both
         presidio_filter_scope: input
+        # Analyzer 使用的语言，服务端必须加载对应语言模型
         presidio_language: en
+        # false 表示响应中不恢复输入阶段被替换的原始 PII
         output_parse_pii: false
+        # 每种 PII 的处理动作，MASK 表示替换，BLOCK 表示拒绝请求
         pii_entities_config:
+          # 人名
           PERSON: MASK
+          # 电子邮箱
           EMAIL_ADDRESS: MASK
+          # 电话号码
           PHONE_NUMBER: MASK
+          # 信用卡号，检测到后拒绝请求
           CREDIT_CARD: BLOCK
+          # 美国社会安全号码，检测到后拒绝请求
           US_SSN: BLOCK
+        # Analyzer 结果达到对应置信度后才执行 MASK 或 BLOCK
         presidio_score_thresholds:
           PERSON: 0.85
           EMAIL_ADDRESS: 0.7
