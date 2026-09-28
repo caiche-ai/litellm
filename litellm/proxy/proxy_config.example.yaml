@@ -1,0 +1,60 @@
+model_list:
+  - model_name: chat-model
+    litellm_params:
+      model: os.environ/CHAT_MODEL
+      api_key: os.environ/CHAT_MODEL_API_KEY
+      api_base: os.environ/CHAT_MODEL_API_BASE
+  - model_name: embedding-model
+    litellm_params:
+      model: os.environ/EMBEDDING_MODEL
+      api_key: os.environ/EMBEDDING_MODEL_API_KEY
+      api_base: os.environ/EMBEDDING_MODEL_API_BASE
+
+mcp_servers:
+  documentation:
+    transport: http
+    url: os.environ/MCP_SERVER_URL
+
+general_settings:
+  master_key: os.environ/LITELLM_MASTER_KEY
+  store_model_in_db: false
+  disable_spend_logs: false
+
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+  timeout: 60
+  allowed_fails: 3
+  cooldown_time: 60
+
+litellm_settings:
+  drop_params: true
+  request_timeout: 60
+  mcp_semantic_tool_filter:
+    enabled: true
+    embedding_model: embedding-model
+    top_k: 5
+    similarity_threshold: 0.3
+  guardrails:
+    - guardrail_name: pii-input-mask
+      litellm_params:
+        guardrail: presidio
+        mode: pre_call
+        default_on: true
+        presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+        presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+        presidio_filter_scope: input
+        presidio_language: en
+        output_parse_pii: false
+        pii_entities_config:
+          PERSON: MASK
+          EMAIL_ADDRESS: MASK
+          PHONE_NUMBER: MASK
+          CREDIT_CARD: BLOCK
+          US_SSN: BLOCK
+        presidio_score_thresholds:
+          PERSON: 0.85
+          EMAIL_ADDRESS: 0.7
+          PHONE_NUMBER: 0.8
+          CREDIT_CARD: 0.9
+          US_SSN: 0.9
