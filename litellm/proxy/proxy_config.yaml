@@ -61,20 +61,19 @@ litellm_settings:
     top_k: 5
     similarity_threshold: 0.3
 
-  
-  guardrails:
-    - guardrail_name: pii-input-mask
-      litellm_params:
-        guardrail: presidio
-        mode: pre_call
-        default_on: true
-        presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-        presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-        presidio_filter_scope: input
-        output_parse_pii: false
-        pii_entities_config:
-          PERSON: MASK
-          EMAIL_ADDRESS: MASK
-          PHONE_NUMBER: MASK
-          CREDIT_CARD: MASK
-  
+
+guardrails:
+  - guardrail_name: pii-input-mask
+    litellm_params:
+      guardrail: presidio
+      mode: pre_call
+      default_on: true
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      presidio_filter_scope: input
+      output_parse_pii: false
+      pii_entities_config:
+        PERSON: MASK
+        EMAIL_ADDRESS: MASK
+        PHONE_NUMBER: MASK
+        CREDIT_CARD: MASK

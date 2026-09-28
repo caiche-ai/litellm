@@ -67,44 +67,45 @@ litellm_settings:
     top_k: 5
     # 工具入选所需的最低相似度
     similarity_threshold: 0.3
-  # 请求和响应安全规则列表
-  guardrails:
-    # Guardrail 的逻辑名称，可用于请求、模型、Key 或 Team 绑定
-    - guardrail_name: pii-input-mask
-      # Presidio Guardrail 的初始化参数
-      litellm_params:
-        # 使用 Presidio 执行 PII 识别和处理
-        guardrail: presidio
-        # 在调用上游模型之前运行输入检查
-        mode: pre_call
-        # 对所有请求默认启用，无需客户端显式指定 guardrails
-        default_on: true
-        # Presidio Analyzer 地址，负责识别实体类型、位置和置信度
-        presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
-        # Presidio Anonymizer 地址，负责替换已识别的敏感文本
-        presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
-        # 仅处理输入；可改为 output 或 both
-        presidio_filter_scope: input
-        # Analyzer 使用的语言，服务端必须加载对应语言模型
-        presidio_language: en
-        # false 表示响应中不恢复输入阶段被替换的原始 PII
-        output_parse_pii: false
-        # 每种 PII 的处理动作，MASK 表示替换，BLOCK 表示拒绝请求
-        pii_entities_config:
-          # 人名
-          PERSON: MASK
-          # 电子邮箱
-          EMAIL_ADDRESS: MASK
-          # 电话号码
-          PHONE_NUMBER: MASK
-          # 信用卡号，检测到后拒绝请求
-          CREDIT_CARD: BLOCK
-          # 美国社会安全号码，检测到后拒绝请求
-          US_SSN: BLOCK
-        # Analyzer 结果达到对应置信度后才执行 MASK 或 BLOCK
-        presidio_score_thresholds:
-          PERSON: 0.85
-          EMAIL_ADDRESS: 0.7
-          PHONE_NUMBER: 0.8
-          CREDIT_CARD: 0.9
-          US_SSN: 0.9
+
+# 请求和响应安全规则列表
+guardrails:
+  # Guardrail 的逻辑名称，可用于请求、模型、Key 或 Team 绑定
+  - guardrail_name: pii-input-mask
+    # Presidio Guardrail 的初始化参数
+    litellm_params:
+      # 使用 Presidio 执行 PII 识别和处理
+      guardrail: presidio
+      # 在调用上游模型之前运行输入检查
+      mode: pre_call
+      # 对所有请求默认启用，无需客户端显式指定 guardrails
+      default_on: true
+      # Presidio Analyzer 地址，负责识别实体类型、位置和置信度
+      presidio_analyzer_api_base: os.environ/PRESIDIO_ANALYZER_API_BASE
+      # Presidio Anonymizer 地址，负责替换已识别的敏感文本
+      presidio_anonymizer_api_base: os.environ/PRESIDIO_ANONYMIZER_API_BASE
+      # 仅处理输入；可改为 output 或 both
+      presidio_filter_scope: input
+      # Analyzer 使用的语言，服务端必须加载对应语言模型
+      presidio_language: en
+      # false 表示响应中不恢复输入阶段被替换的原始 PII
+      output_parse_pii: false
+      # 每种 PII 的处理动作，MASK 表示替换，BLOCK 表示拒绝请求
+      pii_entities_config:
+        # 人名
+        PERSON: MASK
+        # 电子邮箱
+        EMAIL_ADDRESS: MASK
+        # 电话号码
+        PHONE_NUMBER: MASK
+        # 信用卡号，检测到后拒绝请求
+        CREDIT_CARD: BLOCK
+        # 美国社会安全号码，检测到后拒绝请求
+        US_SSN: BLOCK
+      # Analyzer 结果达到对应置信度后才执行 MASK 或 BLOCK
+      presidio_score_thresholds:
+        PERSON: 0.85
+        EMAIL_ADDRESS: 0.7
+        PHONE_NUMBER: 0.8
+        CREDIT_CARD: 0.9
+        US_SSN: 0.9
