@@ -640,6 +640,8 @@ async def _route_request_single_attempt(  # noqa: ANN202  # returns unawaited pr
             and data["model"] not in router_model_names
             and data["model"] in llm_router.team_public_model_names
         ) or llm_router.is_recognized_model(data["model"]):
+            # 动态分发路由
+            # getattr(llm_router, "chat") 等价于 llm_router.chat
             return getattr(llm_router, f"{route_type}")(**data)
 
         elif data["model"] not in router_model_names:

@@ -1,5 +1,4 @@
-"""
-Adds anti-framing / content-type security headers to every HTTP response.
+"""为 HTTP 响应添加防嵌入和内容类型安全响应头。
 
 X-Frame-Options and Content-Security-Policy: frame-ancestors 'none' stop the
 admin UI and login pages from being embedded cross-origin (clickjacking).

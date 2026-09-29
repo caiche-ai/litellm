@@ -1,3 +1,5 @@
+"""拒绝超过配置大小限制的 HTTP 请求体。"""
+
 import json
 from collections.abc import Callable
 from typing import Final

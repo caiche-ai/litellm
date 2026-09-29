@@ -1,4 +1,6 @@
 """
+对 HTTP 请求进行分类，并记录网关和计费指标。
+
 Counts HTTP requests to LLM inference, MCP, and A2A endpoints.
 
 Feeds two independent sinks off one classification:

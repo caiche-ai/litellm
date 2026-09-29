@@ -1,6 +1,4 @@
-"""
-Prometheus Auth Middleware - Pure ASGI implementation
-"""
+"""对 Prometheus 指标接口的请求进行身份认证。"""
 
 import json
 from collections.abc import MutableMapping

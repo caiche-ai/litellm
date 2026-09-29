@@ -1229,6 +1229,23 @@ async def open_sse_before_first_byte(
     as an HTTP error status, and LiteLLM's own `x-litellm-*` response headers are
     not yet known. Both are why this stays off until an operator sets an interval.
     """
+    """当上游 LLM 调用仍在进行中时，向客户端写入 SSE keepalive 注释。
+
+    从发起请求到收到第一个 token 的整个等待时间，都发生在 `produce_response`
+    内部：上游在发出第一个 token 之前，不会返回其响应头，因此此时还没有任何
+    数据进入 ASGI 响应阶段，代理处于零字节输出状态。中间层设备如果配置了
+    空闲读取超时（AWS ALB 和 nginx 的默认值都是 60 秒），就会断开一条实际上
+    完全健康的连接。
+
+    当 `produce_response` 在一个间隔时间内未完成时，响应会被立即打开，然后
+    `: ping` 注释——所有符合规范的 SSE 客户端都会忽略它——持续填充链路，
+    直到真正的响应就绪并回放到该连接上。
+
+    过早提交状态行是有代价的：在第一条 ping 发出之后才发现失败，错误会以
+    SSE 错误帧的形式在 200 状态码下到达客户端，而不是以 HTTP 错误状态码
+    返回；并且 LiteLLM 自己的 `x-litellm-*` 响应头此时也尚未可知。这两点
+    正是该功能默认关闭、直到运维人员显式设置间隔时间才启用的原因。
+    """
     interval: Final = coerce_keepalive_interval(ping_interval_seconds)
     if interval is None:
         return await produce_response
@@ -2185,6 +2202,7 @@ class ProxyBaseLLMRequestProcessing:
                 data=self.data, llm_router=llm_router, trust_client_model_info=False, model_alias=rate_limited_model
             )
         )
+        # 模型级 guardrail 在此合并
         self.data = _check_and_merge_model_level_guardrails(
             data=merged_for_requested,
             llm_router=llm_router,
@@ -2519,33 +2537,40 @@ class ProxyBaseLLMRequestProcessing:
 
     async def _process_llm_request(
         self,
-        request: Request,
-        fastapi_response: Response,
-        user_api_key_dict: UserAPIKeyAuth,
-        route_type: ProxyRouteType,
-        proxy_logging_obj: ProxyLogging,
-        general_settings: dict[str, object],
-        proxy_config: ProxyConfig,
-        select_data_generator: Callable[..., object] | None = None,
-        llm_router: Router | None = None,
-        model: str | None = None,
-        user_model: str | None = None,
-        user_temperature: float | None = None,
-        user_request_timeout: float | None = None,
-        user_max_tokens: int | None = None,
-        user_api_base: str | None = None,
-        version: str | None = None,
-        is_streaming_request: bool | None = False,
-        contents: list[object] | None = None,  # Add contents parameter
-        skip_pre_call_logic: bool = False,
+        request: Request,  # FastAPI 请求对象，包含客户端请求头和体
+        fastapi_response: Response,  # 需要写回的 FastAPI 响应对象，用于写入响应头
+        user_api_key_dict: UserAPIKeyAuth,  # 当前请求对应的 API Key/租户鉴权信息
+        route_type: ProxyRouteType,  # 当前路由类型，如 completion、responses、passthrough 等
+        proxy_logging_obj: ProxyLogging,  # 代理日志与回调上下文对象
+        general_settings: dict[str, object],  # 全局通用配置项，如超时、重试、取消策略等
+        proxy_config: ProxyConfig,  # 代理配置对象，参与路由和设定解析
+        select_data_generator: Callable[..., object] | None = None,  # 可选的流式响应转换器，用于生成 SSE 数据流
+        llm_router: Router | None = None,  # 可选的路由器实例，用于模型分发和 fallback
+        model: str | None = None,  # 由调用方直接指定的目标模型名
+        user_model: str | None = None,  # 来自用户/CLI 传入的模型覆盖值
+        user_temperature: float | None = None,  # 用户显式设置的 temperature
+        user_request_timeout: float | None = None,  # 用户显式设置的请求超时时间
+        user_max_tokens: int | None = None,  # 用户显式设置的 max_tokens
+        user_api_base: str | None = None,  # 用户显式指定的 API base
+        version: str | None = None,  # 请求对应的代理/接口版本
+        is_streaming_request: bool | None = False,  # 请求是否被声明为流式调用
+        contents: list[object] | None = None,  # 额外传入的消息内容列表，部分端点会单独携带内容
+        skip_pre_call_logic: bool = False,  # 是否跳过标准的 pre-call 处理，适用于已提前初始化请求状态的场景
     ) -> Any:
         """
-        Common request processing logic for both chat completions and responses API endpoints
+        处理聊天补全与 Responses API 共享的通用请求逻辑。
+        这是统一入口，负责规范路由、hook、流式处理和响应元数据，
+        最终再把结果返回给客户端。
         """
+        # 保留客户端原始请求中的模型名，这样 OpenAI 兼容响应仍能返回给用户
+        # 看到的模型名，即使发生了 alias 或内部路由重写也不受影响。
         client_model: Final = get_client_requested_model(request) or self.data.get("model")
         requested_model_from_client: Final[str | None] = client_model if isinstance(client_model, str) else None
         self._debug_log_request_payload()
 
+        # 某些调用方会提前构造请求状态，并有意跳过标准的 pre-call 准备。
+        # 这种情况下，仍然要求 self.data 中已经持有 logging_obj，否则后续 hook 和
+        # 响应元数据写入无法正常执行。
         if skip_pre_call_logic:
             logging_obj = self.data.get("litellm_logging_obj")
             if logging_obj is None:
@@ -2592,8 +2617,8 @@ class ProxyBaseLLMRequestProcessing:
             logging_obj._defer_async_logging = True
 
         tasks: Final = []
-        # Start the moderation check (during_call_hook) as early as possible
-        # This gives it a head start to mask/validate input while the proxy handles routing
+        # 让 during_call_hook 与上游模型请求并发执行，尽早检查和脱敏请求内容，
+        # 这样 guardrails 和 moderation 能在路由解析过程中先完成校验，而不是阻塞整个调用。
         tasks.append(
             asyncio.create_task(
                 proxy_logging_obj.during_call_hook(
@@ -2604,12 +2629,13 @@ class ProxyBaseLLMRequestProcessing:
             )
         )
 
-        # Pass contents if provided
+        # 某些端点会把内容字段单独传入，而不是放进通用请求体中。
+        # 这里统一挂到 self.data 上，确保后续路由和 provider adapter 能拿到统一的数据结构。
         if contents:
             self.data["contents"] = contents
 
-        ### ROUTE THE REQUEST ###
-        # Do not change this - it should be a constant time fetch - ALWAYS
+        ### 路由请求 ###
+        # 路由解析保持为常量级查找，尽量减少真正发起 LLM 调用前的延迟。
         llm_call: Final = await route_request(
             data=self.data,
             route_type=route_type,
@@ -2632,6 +2658,8 @@ class ProxyBaseLLMRequestProcessing:
 
         response = responses[1]
 
+        # 在 provider 调用成功后，统一整理结果，并决定返回的是流式响应、
+        # 走某个 route 特定转换，还是继续走非流式返回分支。
         _exception_raised = False
         try:
             hidden_params = get_hidden_params_dict(response)
@@ -2890,6 +2918,8 @@ class ProxyBaseLLMRequestProcessing:
                     except Exception as e:
                         verbose_proxy_logger.exception("Error in orphaned streaming async logging: %s", e)
 
+        # 在 post-call hook 执行后重新读取 hidden params，确保头信息、元数据或成本
+        # 等字段的后续写入都会体现在最终响应头中。
         hidden_params = get_hidden_params_dict(response)  # get any updated response headers
         additional_headers = hidden_params.get("additional_headers", {}) or {}
 

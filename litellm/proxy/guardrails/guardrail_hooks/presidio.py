@@ -405,6 +405,7 @@ class _OPTIONAL_PresidioPIIMasking(CustomGuardrail):
         # keeps the same sanitized error message a single call would produce.
         # A single-character text can never be split further, so it always
         # takes the single-call path regardless of its encoded width.
+        # 超大文本要在 try 之前就分块
         if (
             text
             and len(text) > 1
@@ -419,6 +420,9 @@ class _OPTIONAL_PresidioPIIMasking(CustomGuardrail):
         try:
             # Skip empty or whitespace-only text to avoid Presidio errors
             # Common in tool/function calling where assistant content is empty
+            # 空字符串、空白字符串不需要发到 Presidio
+            # 这是为了避免 Presidio 报错
+            # 常见场景：工具调用返回空文本、函数调用内容为空
             if not text or len(text.strip()) == 0:
                 verbose_proxy_logger.debug("Skipping Presidio analysis for empty/whitespace-only text")
                 return []
@@ -1204,7 +1208,7 @@ class _OPTIONAL_PresidioPIIMasking(CustomGuardrail):
         verbose_proxy_logger.debug(
             "PII Masking Args: self.output_parse_pii=%s; type of response=%s", self.output_parse_pii, type(response)
         )
-
+        # 屏蔽模型新产生的 PII
         if self.apply_to_output is True:
             if self._is_anthropic_message_response(response):
                 return await self._process_anthropic_response_for_pii(

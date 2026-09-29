@@ -3342,6 +3342,7 @@ async def user_api_key_auth(
     # body. _read_request_body can raise ProxyException for malformed JSON;
     # without this, that path leaves no span for the exception handler to
     # close, and the trace never reaches the backend.
+    # 先准备好 tracing 语境，再允许读取 body；否则格式错误会导致 span 丢失，链路追踪不完整。
     _ensure_parent_otel_span_on_request_state(request)
 
     request_data, body_parse_exception = await _read_request_body_deferring_parse_failure(request=request)
@@ -3353,6 +3354,7 @@ async def user_api_key_auth(
     # onto the server span. No-op when OTel V2 isn't active.
     with phase_span(f"auth {route}"), spend_counter_batch_scope(_spend_counter_redis_cache()):
         try:
+            # 解析请求头、找到真实API Key、查数据库/缓存、验证key是否存在/有效、获取用户/团队/组织、组成用户身份上下文
             user_api_key_auth_obj: Final = await _user_api_key_auth_builder(
                 request=request,
                 api_key=api_key,
@@ -3371,6 +3373,15 @@ async def user_api_key_auth(
                 raise body_parse_exception
             raise
         user_api_key_auth_obj.budget_reservation = None
+
+        # 从请求头中解析 agent caller：在 API key / 用户身份已经解析完成之后，
+        # 再补充“这次请求是由谁发起的”这一层信息。这里的 agent caller 不是
+        # 认证主体本身，而是调用来源标识，例如某个前端、SDK、内部 agent、
+        # 自动化脚本等在请求头中带上的来源字段。
+        #
+        # 解析结果会写到 user_api_key_auth_obj.agent_caller 上，后续的日志、审计、
+        # 链路追踪和权限归因都可以知道：这次请求不是只验证了 key，还知道它
+        # 来自哪个调用方。若请求头中没有携带相关标识，则该值可能为空或 None。
         user_api_key_auth_obj.agent_caller = agent_caller_from_headers(
             _safe_get_request_headers(request), user_api_key_auth_obj
         )
@@ -3381,6 +3392,14 @@ async def user_api_key_auth(
         # against, and budget reservation would increment live spend counters that
         # only the endpoint's post-call path releases; the endpoint never runs, since
         # the parse failure is raised below.
+        # 认证和授权是两步：
+        # 1) 认证：这个请求是不是来自一个合法的 key / JWT / 用户？
+        # 2) 授权：即使它合法，也必须有权限访问当前 route、当前 model、当前 team / user / project、
+        #    以及是否超出预算或被禁用。
+        #
+        # 这里的 _authorize_authenticated_request() 是授权入口。它会校验路由是否允许、
+        # team/user/project/end-user 的限制、模型访问权限、预算和其他安全策略。
+        # 如果请求在认证后仍然不满足授权条件，就会被拒绝，避免“合法 key 但无权限访问”的漏洞。
         if body_parse_exception is None:
             recovered_auth_obj: Final = await _authorize_authenticated_request(
                 user_api_key_auth_obj=user_api_key_auth_obj,

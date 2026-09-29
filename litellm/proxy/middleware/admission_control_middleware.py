@@ -1,3 +1,5 @@
+"""限制每个 worker 的并发请求数，并对超出的 HTTP 请求进行排队或拒绝。"""
+
 import asyncio
 import os
 from collections.abc import Callable, Mapping

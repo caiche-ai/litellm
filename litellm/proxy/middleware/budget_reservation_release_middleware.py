@@ -1,3 +1,14 @@
+"""在 HTTP 请求或 WebSocket 结束时释放未被认领的预算预留。
+
+Releases the budget reservation auth made for a request once no callback owns it.
+
+Auth stamps the reservation on the request or socket state; a call that starts
+claims it for the cost callbacks, which settle it on success or failure. When
+the response has been sent or the socket has closed and the reservation is
+still unclaimed, nothing else ever would, so it is released here instead of
+pinning the spend counter until its TTL.
+"""
+
 from collections.abc import Awaitable, Callable, Mapping
 from typing import Final
 
@@ -7,6 +18,8 @@ _SCOPES_AUTH_STAMPS: Final = frozenset({"http", "websocket"})
 
 
 class BudgetReservationReleaseMiddleware:
+    """Releases unclaimed budget reservations when HTTP requests or WebSockets finish."""
+
     """Releases the budget reservation auth made for a request once no callback owns it.
 
     Auth stamps the reservation on the request or socket state; a call that starts

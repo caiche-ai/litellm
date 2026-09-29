@@ -1,5 +1,4 @@
-"""
-Tracks the number of HTTP requests currently in-flight on this uvicorn worker.
+"""跟踪当前 uvicorn worker 正在处理的 HTTP 请求。
 
 Used by /health/backlog to expose per-pod queue depth, and emitted as the
 Prometheus gauge `litellm_in_flight_requests`.

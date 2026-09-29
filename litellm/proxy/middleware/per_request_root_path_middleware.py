@@ -1,4 +1,4 @@
-"""Per-request ``root_path`` resolution from ``SERVER_ROOT_PATHS``.
+"""根据 ``SERVER_ROOT_PATHS`` 解析每个请求对应的 URL 前缀。
 
 ``SERVER_ROOT_PATH`` is a startup scalar, so one deployment serves exactly one
 client-visible URL path prefix; a request under any other prefix 404s before a

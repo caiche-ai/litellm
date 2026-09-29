@@ -1722,6 +1722,8 @@ app = FastAPI(
 ## middleware after an application has started". See
 ## ``litellm.integrations.otel.mount`` for the full rationale; the call is a safe
 ## no-op when the gate is off or the instrumentation package is unavailable.
+
+# V2 OTEL：为 FastAPI 应用启用服务端 span 埋点（由 LITELLM_OTEL_V2 环境变量控制）。 此操作必须在应用创建时执行 —— 一旦 lifespan（生命周期）开始运行，中间件栈就会被冻结，此时再调用 instrument_app 会抛出 "Cannot add middleware after an application has started"（应用启动后无法再添加中间件）错误。完整设计缘由参见 litellm.integrations.otel.mount；当该开关关闭或埋点包不可用时，此调用是安全的空操作（no-op）。
 from litellm.integrations.otel.mount import instrument_fastapi_app
 
 instrument_fastapi_app(app)
@@ -11891,6 +11893,7 @@ async def chat_completion(
     """
     global general_settings, user_debug, proxy_logging_obj, llm_model_list
     global user_temperature, user_request_timeout, user_max_tokens, user_api_base
+    # Final：标记这个变量不应被重新赋值
     data: Final = await _read_request_body(request=request)
     if user_api_key_dict is not None:
         if not isinstance(data.get("metadata"), dict):
