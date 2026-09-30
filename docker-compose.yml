@@ -16,6 +16,8 @@ services:
       - "4000:4000" # Map the container port to the host, change the host port if necessary
     environment:
       DATABASE_URL: "postgresql://llmproxy:dbpassword9090@db:5432/litellm"
+      PRESIDIO_ANALYZER_API_BASE: "http://presidio-analyzer:3000"
+      PRESIDIO_ANONYMIZER_API_BASE: "http://presidio-anonymizer:3000"
       # Optional: route read-only queries (find_*, count, group_by, query_raw/_first)
       # to a separate reader endpoint, e.g. an Aurora reader. Leave unset for
       # single-DB deployments. With IAM_TOKEN_DB_AUTH enabled, the reader URL
@@ -26,6 +28,8 @@ services:
       - .env # Load local .env file
     depends_on:
       - db  # Indicates that this service depends on the 'db' service, ensuring 'db' starts first
+      - presidio-analyzer
+      - presidio-anonymizer
     healthcheck:  # Defines the health check configuration for the container
       test:
         - CMD-SHELL
@@ -52,6 +56,32 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+
+  presidio-analyzer:
+    image: ghcr.io/data-privacy-stack/presidio-analyzer@sha256:ae8f6f111ac2f04e3fec552f7f80edd0dcbfa2dd69ee1b9e030475be31669885
+    restart: always
+    container_name: presidio-analyzer
+    ports:
+      - "5002:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
+
+  presidio-anonymizer:
+    image: ghcr.io/data-privacy-stack/presidio-anonymizer@sha256:e567013893ebc80994e3799f6f55c86aa1f0b0fadb779571ab346f0ec45365c1
+    restart: always
+    container_name: presidio-anonymizer
+    ports:
+      - "5001:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      start_period: 30s
+      retries: 3
 
   prometheus:
     image: prom/prometheus
