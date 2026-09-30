@@ -10,7 +10,7 @@ This test validates:
 
 import json
 import os
-from typing import Dict, List
+from typing import Dict, Final, List
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -457,6 +457,21 @@ class TestAnthropicBetaHeadersFiltering:
         )
 
         assert filtered == ["dangerous-tool-use-2026-09-03"]
+
+    @pytest.mark.parametrize("provider", ("anthropic", "bedrock"))
+    @pytest.mark.parametrize(
+        "beta",
+        (
+            "thinking-display-updates-2026-08-18",
+            "mid-conversation-tool-changes-2026-07-01",
+        ),
+    )
+    def test_client_feature_betas_forwarded(self, provider: str, beta: str) -> None:
+        headers: Final = update_headers_with_filtered_beta(
+            headers={"anthropic-beta": beta}, provider=provider
+        )
+
+        assert headers.get("anthropic-beta") == beta
 
     def test_null_value_headers_filtered(self):
         """Test that headers with null values are always filtered out."""
